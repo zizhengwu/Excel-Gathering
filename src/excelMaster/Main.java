@@ -1,9 +1,12 @@
 package excelMaster;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -15,6 +18,8 @@ public class Main {
 
 	Vector<SheetFixedContent> sheetFixedContent = new Vector<SheetFixedContent>();
 
+	Vector<Vector<ArrayList<String>>> values = new Vector<Vector<ArrayList<String>>>();
+
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		Main main = new Main();
@@ -22,8 +27,47 @@ public class Main {
 	}
 
 	void init() throws Exception {
+
 		this.readFormat("format.xlsx");
+		File dir = new File("input");
+		for (File child : dir.listFiles()) {
+			this.readEvery(child.getName());
+		}
 		this.output("output.xlsx");
+	}
+
+	private void readEvery(String fileName) throws InvalidFormatException,
+			IOException {
+		
+		InputStream inp = new FileInputStream("input//" + fileName);
+		Workbook wb = WorkbookFactory.create(inp);
+		for (int i = 0; i < sheetFixedContent.size(); i++) {
+
+			Sheet sheet = wb.getSheetAt(i);
+			ArrayList<String> thisValues = new ArrayList<String>();
+			thisValues.add(fileName);
+			// Decide which rows to process
+			int rowStart = sheet.getFirstRowNum();
+			int rowEnd = sheet.getLastRowNum() + 1;
+
+			for (int rowNum = rowStart; rowNum < rowEnd; rowNum++) {
+				Row r = sheet.getRow(rowNum);
+				int lastColumn = Math.max(r.getLastCellNum(),
+						MY_MINIMUM_COLUMN_COUNT);
+
+				if (rowNum != rowStart) {
+					Cell c = r
+							.getCell(lastColumn - 1, Row.RETURN_BLANK_AS_NULL);
+					if (c == null) {
+						thisValues.add("");
+					} else {
+						thisValues.add(c.toString());
+					}
+				}
+			}
+			values.get(i).add(thisValues);
+		}
+
 	}
 
 	private void output(String fileName) throws IOException {
@@ -38,8 +82,7 @@ public class Main {
 				if (j == 0) {
 					for (int k = 0; k < thisSheetFixedContent.getColumnCount(); k++) {
 						row.createCell(k).setCellValue(
-								thisSheetFixedContent.getColumnHeader()
-										.get(k));
+								thisSheetFixedContent.getColumnHeader().get(k));
 					}
 				} else {
 					for (int k = 0; k < thisSheetFixedContent.getContent()
@@ -49,6 +92,10 @@ public class Main {
 										.get(k));
 					}
 				}
+				for (int k = 0; k < values.get(i).size(); k++) {
+					row.createCell(thisSheetFixedContent.getContent().get(j).size() + k).setCellValue(values.get(i).get(k).get(j));
+				}
+				
 			}
 		}
 
@@ -62,9 +109,8 @@ public class Main {
 		InputStream inp = new FileInputStream("format.xlsx");
 		Workbook wb = WorkbookFactory.create(inp);
 		int sheetCount = wb.getNumberOfSheets();
-		System.out.println("sheetCount = " + sheetCount);
 		for (int i = 0; i < sheetCount; i++) {
-			System.out.println("Sheet " + i);
+			values.add(new Vector<ArrayList<String>>());
 			SheetFixedContent thisSheetFixedContent = new SheetFixedContent();
 			Sheet sheet = wb.getSheetAt(i);
 			thisSheetFixedContent.setSheetName(sheet.getSheetName());
@@ -74,9 +120,7 @@ public class Main {
 			thisSheetFixedContent.setRowCount(rowEnd);
 
 			for (int rowNum = rowStart; rowNum < rowEnd; rowNum++) {
-				System.out.println("rowNum = " + rowNum);
 				Row r = sheet.getRow(rowNum);
-				System.out.println(r.getLastCellNum());
 				int lastColumn = Math.max(r.getLastCellNum(),
 						MY_MINIMUM_COLUMN_COUNT);
 
