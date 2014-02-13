@@ -45,7 +45,7 @@ public class Main {
 
 			Sheet sheet = wb.getSheetAt(i);
 			ArrayList<String> thisValues = new ArrayList<String>();
-			thisValues.add(fileName);
+			thisValues.add(fileName.split("\\.")[0]);
 			// Decide which rows to process
 			int rowStart = sheet.getFirstRowNum();
 			int rowEnd = sheet.getLastRowNum() + 1;
@@ -93,7 +93,12 @@ public class Main {
 					}
 				}
 				for (int k = 0; k < values.get(i).size(); k++) {
-					row.createCell(thisSheetFixedContent.getContent().get(j).size() + k).setCellValue(values.get(i).get(k).get(j));
+					if (j == 0) {
+						row.createCell(thisSheetFixedContent.getColumnCount() + k).setCellValue(values.get(i).get(k).get(j));
+					}
+					else {
+						row.createCell(thisSheetFixedContent.getContent().get(j).size() + k).setCellValue(values.get(i).get(k).get(j));
+					}
 				}
 				
 			}
