@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
 
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -23,12 +22,12 @@ public class Main {
 	}
 
 	void init() throws Exception {
-		this.readFormat("CJ.xls");
-		this.output("output.xls");
+		this.readFormat("format.xlsx");
+		this.output("output.xlsx");
 	}
 
 	private void output(String fileName) throws IOException {
-		Workbook wb = new HSSFWorkbook();
+		Workbook wb = new XSSFWorkbook();
 		for (int i = 0; i < sheetFixedContent.size(); i++) {
 			SheetFixedContent thisSheetFixedContent = sheetFixedContent.get(i);
 			Sheet sheet = wb.createSheet(thisSheetFixedContent.getSheetName());
@@ -36,10 +35,19 @@ public class Main {
 			// Create a row and put some cells in it. Rows are 0 based.
 			for (int j = 0; j < thisSheetFixedContent.getRowCount(); j++) {
 				Row row = sheet.createRow(j);
-				for (int k = 0; k < thisSheetFixedContent.getContent().get(j).size(); k++) {
-					row.createCell(k).setCellValue(
-							thisSheetFixedContent.getContent().get(j).get(k));
-					System.out.println(thisSheetFixedContent.getContent().get(j).get(k));
+				if (j == 0) {
+					for (int k = 0; k < thisSheetFixedContent.getColumnCount(); k++) {
+						row.createCell(k).setCellValue(
+								thisSheetFixedContent.getColumnHeader()
+										.get(k));
+					}
+				} else {
+					for (int k = 0; k < thisSheetFixedContent.getContent()
+							.get(j).size(); k++) {
+						row.createCell(k).setCellValue(
+								thisSheetFixedContent.getContent().get(j)
+										.get(k));
+					}
 				}
 			}
 		}
@@ -51,7 +59,7 @@ public class Main {
 	}
 
 	void readFormat(String fileName) throws IOException, InvalidFormatException {
-		InputStream inp = new FileInputStream(fileName);
+		InputStream inp = new FileInputStream("format.xlsx");
 		Workbook wb = WorkbookFactory.create(inp);
 		int sheetCount = wb.getNumberOfSheets();
 		System.out.println("sheetCount = " + sheetCount);
