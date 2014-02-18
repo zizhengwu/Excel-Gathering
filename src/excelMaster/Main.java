@@ -45,7 +45,7 @@ public class Main {
 
 			Sheet sheet = wb.getSheetAt(i);
 			ArrayList<String> thisValues = new ArrayList<String>();
-			thisValues.add(fileName.split("\\.")[0]);
+			thisValues.add(fileName.split(" ")[0]);
 			// Decide which rows to process
 			int rowStart = sheet.getFirstRowNum();
 			int rowEnd = sheet.getLastRowNum() + 1;
@@ -80,7 +80,7 @@ public class Main {
 			for (int j = 0; j < thisSheetFixedContent.getRowCount(); j++) {
 				Row row = sheet.createRow(j);
 				if (j == 0) {
-					for (int k = 0; k < thisSheetFixedContent.getColumnCount(); k++) {
+					for (int k = 0; k < thisSheetFixedContent.getColumnHeader().size(); k++) {
 						row.createCell(k).setCellValue(
 								thisSheetFixedContent.getColumnHeader().get(k));
 					}
@@ -115,10 +115,12 @@ public class Main {
 		Workbook wb = WorkbookFactory.create(inp);
 		int sheetCount = wb.getNumberOfSheets();
 		for (int i = 0; i < sheetCount; i++) {
+			
 			values.add(new Vector<ArrayList<String>>());
 			SheetFixedContent thisSheetFixedContent = new SheetFixedContent();
 			Sheet sheet = wb.getSheetAt(i);
 			thisSheetFixedContent.setSheetName(sheet.getSheetName());
+			System.out.println(sheet.getSheetName());
 			// Decide which rows to process
 			int rowStart = sheet.getFirstRowNum();
 			int rowEnd = sheet.getLastRowNum() + 1;
@@ -133,10 +135,10 @@ public class Main {
 					thisSheetFixedContent.setColumnCount(lastColumn);
 					for (int cn = 0; cn < lastColumn; cn++) {
 						Cell c = r.getCell(cn, Row.RETURN_BLANK_AS_NULL);
-
-						thisSheetFixedContent.getColumnHeader().add(
-								c.toString());
-
+						if (c != null) {
+							thisSheetFixedContent.getColumnHeader().add(
+									c.toString());
+						}
 					}
 					for (int j = 0; j < thisSheetFixedContent.getRowCount(); j++) {
 						thisSheetFixedContent.getContent().add(
