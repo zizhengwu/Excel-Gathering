@@ -14,6 +14,7 @@ public class Main {
 		for (File child : dir.listFiles()) {
 			util.read(child.getName());
 		}
+		util.output();
 	}
 
 }
