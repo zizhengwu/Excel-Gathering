@@ -41,5 +41,4 @@ public class Main extends JApplet {
 		this.getContentPane().setLayout(new BorderLayout());
 		this.getContentPane().add(util);
 	}
-
 }

@@ -87,6 +87,7 @@ public class Util extends JPanel {
 				Sheet sheet = wb.getSheetAt(i);
 				EachSheet thisEachSheet = new EachSheet();
 				thisEachSheet.sheetname = sheet.getSheetName();
+				log.append(sheet.getSheetName() + "\t");
 				// log.append(thisEachSheet.sheetname);
 				int rowStart = sheet.getFirstRowNum();
 				int rowEnd = sheet.getLastRowNum() + 1;
@@ -119,6 +120,7 @@ public class Util extends JPanel {
 					thisEachSheet.values.score[j - 1] = thisEachSheet.grid[j][thisEachSheet.grid[j].length - 1];
 				}
 				sheets.get(i).add(thisEachSheet);
+				log.append("\n");
 			}
 		}
 
@@ -146,11 +148,16 @@ public class Util extends JPanel {
 													.toString());
 						}
 						if (j != 0) {
-							row.createCell(
-									sheets.get(i).get(0).grid[j].length - 1 + k)
-									.setCellValue(
-											sheets.get(i).get(k).values.score[j - 1]
-													.toString());
+							try {
+								row.createCell(
+										sheets.get(i).get(0).grid[j].length - 1 + k)
+										.setCellValue(
+												sheets.get(i).get(k).values.score[j - 1]
+														.toString());
+							} catch (NullPointerException e) {
+								log.append(sheets.get(i).get(k).values.name + "\t");
+							}
+							
 						}
 					}
 				}
@@ -159,6 +166,7 @@ public class Util extends JPanel {
 			FileOutputStream fileOut = new FileOutputStream("output.xlsx");
 			wb.write(fileOut);
 			fileOut.close();
+			log.setText("");;
 			log.append("看起来成功了！\n");
 		}
 
