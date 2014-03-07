@@ -19,8 +19,10 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.util.StringUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class Util extends JPanel {
@@ -46,7 +48,15 @@ public class Util extends JPanel {
 					File dir = new File("input");
 					for (File child : dir.listFiles()) {
 						try {
-							read(child.getName());
+							if (child.isDirectory()) {
+								for (File subChild : child.listFiles()) {
+									read(child.getName() + "/"
+											+ subChild.getName(),
+											Double.parseDouble(child.getName()));
+								}
+							} else {
+								read(child.getName(), 100.0);
+							}
 						} catch (InvalidFormatException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
@@ -56,7 +66,8 @@ public class Util extends JPanel {
 						}
 					}
 					try {
-						output();
+						output(0);
+						output(1);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -71,9 +82,10 @@ public class Util extends JPanel {
 			this.updateUI();
 		}
 
-		void read(String fileName) throws InvalidFormatException, IOException {
+		void read(String fileName, Double weight)
+				throws InvalidFormatException, IOException {
 			log.append("正在读取: " + fileName + "\n");
-			InputStream inp = new FileInputStream("input//" + fileName);
+			InputStream inp = new FileInputStream("input/" + fileName);
 			Workbook wb = WorkbookFactory.create(inp);
 			int sheetCount = wb.getNumberOfSheets();
 			// 初始化存放n个sheet的vector
@@ -86,7 +98,7 @@ public class Util extends JPanel {
 
 				Sheet sheet = wb.getSheetAt(i);
 				EachSheet thisEachSheet = new EachSheet();
-				thisEachSheet.sheetname = sheet.getSheetName();
+				thisEachSheet.sheetName = sheet.getSheetName();
 				log.append(sheet.getSheetName() + "\t");
 				// log.append(thisEachSheet.sheetname);
 				int rowStart = sheet.getFirstRowNum();
@@ -115,7 +127,15 @@ public class Util extends JPanel {
 				}
 				// 得到最后一列的值
 				thisEachSheet.values.score = new String[thisEachSheet.grid.length];
-				thisEachSheet.values.name = fileName.split(" ")[0];
+				if (containsChar(fileName.split(" ")[0], '/')) {
+					thisEachSheet.values.name = fileName.split(" ")[0].split("/")[1];
+				}
+				else
+				{
+					thisEachSheet.values.name = fileName.split(" ")[0];
+				}
+				
+				thisEachSheet.values.weight = weight;
 				for (int j = 1; j < thisEachSheet.grid.length; j++) {
 					thisEachSheet.values.score[j - 1] = thisEachSheet.grid[j][thisEachSheet.grid[j].length - 1];
 				}
@@ -123,14 +143,21 @@ public class Util extends JPanel {
 				log.append("\n");
 			}
 		}
-
-		void output() throws IOException {
+		
+		public boolean containsChar(String s, char search) {
+		    if (s.length() == 0)
+		        return false;
+		    else
+		        return s.charAt(0) == search || containsChar(s.substring(1), search);
+		}
+		
+		void output(int weightFlag) throws IOException {
 			log.append("开始输出!" + "\n");
 			Workbook wb = new XSSFWorkbook();
 			// 创建sheets
 			for (int i = 0; i < sheets.size(); i++) {
-				Sheet sheet = wb.createSheet(sheets.get(i).get(0).sheetname);
-				log.append("正在输出Sheet: " + sheets.get(i).get(0).sheetname
+				Sheet sheet = wb.createSheet(sheets.get(i).get(0).sheetName);
+				log.append("正在输出Sheet: " + sheets.get(i).get(0).sheetName
 						+ "\n");
 				// 创建行
 				for (int j = 0; j < sheets.get(i).get(0).grid.length; j++) {
@@ -149,24 +176,65 @@ public class Util extends JPanel {
 						}
 						if (j != 0) {
 							try {
-								row.createCell(
-										sheets.get(i).get(0).grid[j].length - 1 + k)
-										.setCellValue(
-												sheets.get(i).get(k).values.score[j - 1]
-														.toString());
+
+								if (weightFlag == 1) {
+									row.createCell(
+											sheets.get(i).get(0).grid[j].length
+													- 1 + k)
+											.setCellValue(
+													StringUtils
+															.isEmpty(sheets
+																	.get(i)
+																	.get(k).values.score[j - 1]
+																	.toString()) ? ""
+															: Double.toString(Double
+																	.parseDouble(sheets
+																			.get(i)
+																			.get(k).values.score[j - 1]
+																			.toString())
+																	* (sheets
+																			.get(i)
+																			.get(k).values.weight / 100)));
+								} else {
+									row.createCell(
+											sheets.get(i).get(0).grid[j].length
+													- 1 + k)
+											.setCellValue(
+													StringUtils
+															.isEmpty(sheets
+																	.get(i)
+																	.get(k).values.score[j - 1]
+																	.toString()) ? ""
+															: sheets.get(i)
+																	.get(k).values.score[j - 1]
+																	.toString());
+								}
+
 							} catch (NullPointerException e) {
-								log.append(sheets.get(i).get(k).values.name + "\t");
+								log.append(sheets.get(i).get(k).values.name
+										+ "\n");
+								log.append("已停止运行");
+							} catch (Exception e) {
+
 							}
-							
+
 						}
 					}
 				}
 
 			}
-			FileOutputStream fileOut = new FileOutputStream("output.xlsx");
-			wb.write(fileOut);
-			fileOut.close();
-			log.setText("");;
+			if (weightFlag == 1) {
+				FileOutputStream fileOut = new FileOutputStream(
+						"outputWithWeight.xlsx");
+				wb.write(fileOut);
+				fileOut.close();
+			} else {
+				FileOutputStream fileOut = new FileOutputStream("output.xlsx");
+				wb.write(fileOut);
+				fileOut.close();
+			}
+
+			log.setText("");
 			log.append("看起来成功了！\n");
 		}
 
@@ -183,7 +251,7 @@ public class Util extends JPanel {
 									log.append("!大于30："
 											+ sheets.get(i).get(j).values.name
 											+ " "
-											+ sheets.get(i).get(j).sheetname
+											+ sheets.get(i).get(j).sheetName
 											+ "\n");
 								}
 								shouldLowerThan100 += thisScore;
@@ -195,7 +263,7 @@ public class Util extends JPanel {
 					if (shouldLowerThan100 > 100) {
 						log.append("!列之和大于100："
 								+ sheets.get(i).get(j).values.name + " "
-								+ sheets.get(i).get(j).sheetname + "\n");
+								+ sheets.get(i).get(j).sheetName + "\n");
 					}
 				}
 			}
